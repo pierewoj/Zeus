@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using Microsoft.Extensions.Logging;
+using static LanguageExt.Prelude;
 
 namespace Zeus.Crawler
 {
@@ -13,37 +15,39 @@ namespace Zeus.Crawler
     {
         private readonly IPageCrawlResultSaver _pageCrawlResultSaver;
         private readonly IResultSavedNotifier _resultSavedNotifier;
-        private readonly IShouldCrawlPagePredicate _shouldCrawlPagePredicate;
         private readonly ICrawler _crawler;
         private readonly ILogger _logger;
+        private readonly ICrawlablePagesRepository _crawlablePagesRepository;
 
-        public CrawlRunner(IPageCrawlResultSaver saver, IResultSavedNotifier notifier, IShouldCrawlPagePredicate shouldCrawlPredicate,
+        public CrawlRunner(IPageCrawlResultSaver saver, IResultSavedNotifier notifier, ICrawlablePagesRepository pagesRepository,
             ICrawler crawler, ILogger<CrawlRunner> logger)
         {
+            _crawlablePagesRepository = pagesRepository;
             _logger = logger;
             _crawler = crawler;
-            _shouldCrawlPagePredicate = shouldCrawlPredicate;
             _resultSavedNotifier = notifier;
             _pageCrawlResultSaver = saver;
         }
 
         public void Run(CrawlablePage startPage)
         {
-            var pagesToBeCrawled = new Queue<CrawlablePage>();
-            pagesToBeCrawled.Enqueue(startPage);
-
             _logger.LogInformation("Crawl run starting.");
-            while (pagesToBeCrawled.Any())
+            var pageOption = _crawlablePagesRepository.GetPage();
+            do
             {
-                var page = pagesToBeCrawled.Dequeue();
-                if (!_shouldCrawlPagePredicate.ShouldCrawl(page))
-                    continue;
-                var res = _crawler.Crawl(page);
-                pagesToBeCrawled.Enqueue(res.CrawlablePages.Where(_shouldCrawlPagePredicate.ShouldCrawl));
-                var savingResult = _pageCrawlResultSaver.SaveResult(res);
-                _resultSavedNotifier.Notify(savingResult);
-            }
+                pageOption.Match(Some:Crawl, None:() => {});
+                pageOption = _crawlablePagesRepository.GetPage();
+            } while (pageOption.IsSome);
+            
             _logger.LogInformation("No more pages to crawl. Exiting crawl run.");
+        }
+
+        private void Crawl(CrawlablePage page)
+        {
+            var res = _crawler.Crawl(page);
+            _crawlablePagesRepository.Save(res.CrawlablePages);
+            var savingResult = _pageCrawlResultSaver.SaveResult(res);
+            _resultSavedNotifier.Notify(savingResult);
         }
     }
 }

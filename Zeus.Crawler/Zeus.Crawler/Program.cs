@@ -14,7 +14,7 @@ namespace Zeus.Crawler
             services.AddSingleton<ICrawler, Crawler>();
             services.AddSingleton<IPageCrawlResultSaver, PageCrawlResultSaver>();
             services.AddSingleton<IResultSavedNotifier, ResultSavedNotifier>();
-            services.AddSingleton<IShouldCrawlPagePredicate, ShouldCrawlPagePredicate>();
+            services.AddSingleton<ICrawlablePagesRepository, CrawlablePagesRepository>();
 
             var serviceProvider = services.BuildServiceProvider();
 
