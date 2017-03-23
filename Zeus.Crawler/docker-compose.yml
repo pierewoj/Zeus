@@ -1,0 +1,8 @@
+version: '2'
+
+services:
+  zeus.crawler:
+    image: zeus.crawler
+    build:
+      context: ./Zeus.Crawler
+      dockerfile: Dockerfile
