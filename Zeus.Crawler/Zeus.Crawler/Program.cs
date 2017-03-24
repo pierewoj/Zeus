@@ -15,7 +15,9 @@ namespace Zeus.Crawler
             services.AddSingleton<IPageCrawlResultSaver, PageCrawlResultSaver>();
             services.AddSingleton<IResultSavedNotifier, ResultSavedNotifier>();
             services.AddSingleton<ICrawlablePagesRepository, CrawlablePagesRepository>();
-
+            services.AddSingleton<ILinksExtractor, LinksExtractor>();
+            services.AddSingleton<ICrawlablePageBuilder, CrawlablePageBuilder>();
+            services.AddSingleton<IShouldCrawlDecider, ShouldCrawlDecider>();
             var serviceProvider = services.BuildServiceProvider();
 
             //configuring serilog

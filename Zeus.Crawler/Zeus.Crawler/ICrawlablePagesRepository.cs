@@ -15,30 +15,36 @@ namespace Zeus.Crawler
 
     class CrawlablePagesRepository : ICrawlablePagesRepository
     {
-        private readonly Queue<CrawlablePage> _crawlablePages = new Queue<CrawlablePage>();
+        private readonly Queue<CrawlablePage> _crawlablePagesQueue = new Queue<CrawlablePage>();
+        private readonly HashSet<CrawlablePage> _savedPages = new HashSet<CrawlablePage>();
+        private readonly IShouldCrawlDecider _shouldCrawlDecider;
 
-        public CrawlablePagesRepository()
+        public CrawlablePagesRepository(IShouldCrawlDecider shouldCrawlDecider)
         {
+            _shouldCrawlDecider = shouldCrawlDecider;
             var startPage = new CrawlablePage()
             {
-                Uri = new Uri("http://kwestiasmaku.com")
+                Uri = new Uri(Configuration.BaseUrl)
             };
-            _crawlablePages.Enqueue(startPage);
+            _crawlablePagesQueue.Enqueue(startPage);
         }
 
         public Option<CrawlablePage> GetPage()
         {
-            if (_crawlablePages.Any())
-            {
-                var page = _crawlablePages.Dequeue();
-                return Option<CrawlablePage>.Some(page);
-            }
-            return Option<CrawlablePage>.None;
+            if (!_crawlablePagesQueue.Any())
+                 return Option<CrawlablePage>.None;
+
+            var page = _crawlablePagesQueue.Dequeue();
+            return page;
         }
 
         public void Save(CrawlablePage page)
         {
-            _crawlablePages.Enqueue(page);
+            if (!_savedPages.Contains(page) && _shouldCrawlDecider.ShouldCrawl(page))
+            {
+                _savedPages.Add(page);
+                _crawlablePagesQueue.Enqueue(page);
+            }
         }
 
         public void Save(IEnumerable<CrawlablePage> pages)

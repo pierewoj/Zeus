@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using Microsoft.Extensions.Logging;
-using static LanguageExt.Prelude;
+﻿using Microsoft.Extensions.Logging;
 
 namespace Zeus.Crawler
 {
@@ -35,7 +31,7 @@ namespace Zeus.Crawler
             var pageOption = _crawlablePagesRepository.GetPage();
             do
             {
-                pageOption.Match(Some:Crawl, None:() => {});
+                pageOption.IfSome(x => Crawl(x));
                 pageOption = _crawlablePagesRepository.GetPage();
             } while (pageOption.IsSome);
             
@@ -44,10 +40,13 @@ namespace Zeus.Crawler
 
         private void Crawl(CrawlablePage page)
         {
-            var res = _crawler.Crawl(page);
-            _crawlablePagesRepository.Save(res.CrawlablePages);
-            var savingResult = _pageCrawlResultSaver.SaveResult(res);
-            _resultSavedNotifier.Notify(savingResult);
+            var resOption = _crawler.Crawl(page);
+            resOption.IfSome(res =>
+            {
+                _crawlablePagesRepository.Save(res.CrawlablePages);
+                var savingResult = _pageCrawlResultSaver.SaveResult(res);
+                _resultSavedNotifier.Notify(savingResult);
+            });
         }
     }
 }

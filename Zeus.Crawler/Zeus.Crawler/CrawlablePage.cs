@@ -2,7 +2,7 @@
 
 namespace Zeus.Crawler
 {
-    class CrawlablePage
+    public class CrawlablePage
     {
         public Uri Uri { get; set; }
     }
