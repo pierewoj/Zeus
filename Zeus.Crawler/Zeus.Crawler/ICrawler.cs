@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using LanguageExt;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 
 namespace Zeus.Crawler
 {
@@ -17,9 +18,11 @@ namespace Zeus.Crawler
         private readonly ILogger<ICrawler> _logger;
         private readonly ICrawlablePageBuilder _crawlablePageBuilder;
         private readonly ILinksExtractor _linksExtractor;
+        private readonly IQueryProcessor _queryProcessor;
 
-        public Crawler(ILogger<ICrawler> logger, ILinksExtractor extractor, ICrawlablePageBuilder crawlablePageBuilder)
+        public Crawler(ILogger<ICrawler> logger, ILinksExtractor extractor, ICrawlablePageBuilder crawlablePageBuilder, IQueryProcessor queryProcessor)
         {
+            _queryProcessor = queryProcessor;
             _linksExtractor = extractor;
             _crawlablePageBuilder = crawlablePageBuilder;
             _logger = logger;
@@ -29,17 +32,16 @@ namespace Zeus.Crawler
             _logger.LogInformation($"Crawling page {page.Uri}");
             try
             {
-                var httpClient = new HttpClient();
-                var response = httpClient.GetAsync(page.Uri);
-                response.Result.EnsureSuccessStatusCode();
-                var content = response.Result.Content.ReadAsStringAsync().Result;
-                var links = _linksExtractor.ExtractLinks(content);
-                var crawlablePages = links.Select(_crawlablePageBuilder.Build);
-                return new PageCrawlResult()
+                var contentOption = _queryProcessor.ProcessQuery(page.Uri);
+                return contentOption.Match(content =>
                 {
-                    CrawlablePages = crawlablePages
-                };
-
+                    var links = _linksExtractor.ExtractLinks(content);
+                    var crawlablePages = links.Select(_crawlablePageBuilder.Build);
+                    return new PageCrawlResult()
+                    {
+                        CrawlablePages = crawlablePages
+                    };
+                }, () => Option<PageCrawlResult>.None);
             }
             catch(Exception ex)
             {

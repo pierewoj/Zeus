@@ -13,7 +13,13 @@ namespace Zeus.Crawler
     {
         public bool ShouldCrawl(CrawlablePage page)
         {
-            return page.Uri.Host.Contains("kwestiasmaku.com");
+            var stringed = page.Uri.ToString();
+            return
+                stringed.StartsWith("http://kwestiasmaku.com")
+                && !stringed.Contains("taxonomy")
+                && !stringed.Contains("sort_by")
+                && !stringed.Contains("login")
+                && !stringed.Contains("user");
         }
     }
 }
