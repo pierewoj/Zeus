@@ -4,7 +4,7 @@ namespace Zeus.Crawler
 {
     interface ICrawlRunner
     {
-        void Run(CrawlablePage startPage);
+        void Run();
     }
 
     class CrawlRunner : ICrawlRunner
@@ -25,7 +25,7 @@ namespace Zeus.Crawler
             _pageCrawlResultSaver = saver;
         }
 
-        public void Run(CrawlablePage startPage)
+        public void Run()
         {
             _logger.LogInformation("Crawl run starting.");
             var pageOption = _crawlablePagesRepository.GetPage();

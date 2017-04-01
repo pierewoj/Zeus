@@ -5,4 +5,8 @@ services:
     image: zeus.crawler
     build:
       context: ./Zeus.Crawler
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
+networks:
+  default:
+    external:
+      name: def_net

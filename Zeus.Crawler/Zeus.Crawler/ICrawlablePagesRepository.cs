@@ -1,71 +1,61 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
+using Consul.SimpleDiscovery;
 using LanguageExt;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Zeus.Crawler.Models;
 
 namespace Zeus.Crawler
 {
     interface ICrawlablePagesRepository
     {
         Option<CrawlablePage> GetPage();
-        void Save(CrawlablePage page);
         void Save(IEnumerable<CrawlablePage> pages);
     }
 
     class CrawlablePagesRepository : ICrawlablePagesRepository
     {
-        private readonly Queue<CrawlablePage> _crawlablePagesQueue = new Queue<CrawlablePage>();
-        private readonly HashSet<string> _savedPages = new HashSet<string>();
-        private readonly IShouldCrawlDecider _shouldCrawlDecider;
         private readonly ILogger<CrawlablePagesRepository> _logger;
+        private readonly IServiceResolver _serviceResolver;
 
-        public CrawlablePagesRepository(IShouldCrawlDecider shouldCrawlDecider, ILogger<CrawlablePagesRepository> logger)
+        public CrawlablePagesRepository(ILogger<CrawlablePagesRepository> logger, IServiceResolver resolver)
         {
+            _serviceResolver = resolver;
             _logger = logger;
-            _shouldCrawlDecider = shouldCrawlDecider;
-            var startPage = new CrawlablePage()
-            {
-                Uri = new Uri(Configuration.BaseUrl)
-            };
-            _crawlablePagesQueue.Enqueue(startPage);
         }
 
         public Option<CrawlablePage> GetPage()
         {
-            if (!_crawlablePagesQueue.Any())
+            using(var client = new HttpClient())
             {
-                _logger.LogInformation("No more pages to crawl. Returning None.");
-                 return Option<CrawlablePage>.None;
-            }
-
-            var page = _crawlablePagesQueue.Dequeue();
-            return page;
-        }
-
-        public void Save(CrawlablePage page)
-        {
-            var pageSavedBefore = _savedPages.Contains(page.Uri.ToString());
-            var shouldCrawlPage = _shouldCrawlDecider.ShouldCrawl(page);
-
-            if (!pageSavedBefore && shouldCrawlPage)
-            {
-                _logger.LogDebug($"Saving page [{page.Uri}] and adding it to the queue. SavedCount={_savedPages.Count}");
-                _savedPages.Add(page.Uri.ToString());
-                _crawlablePagesQueue.Enqueue(page);
-            }
-            else
-            {
-                _logger.LogDebug($"Ignoring saving page [{page.Uri}] and adding it to the queue. PageSavedBefore={pageSavedBefore}, ShouldCrawl={shouldCrawlPage}");
+                var requestUri = new Uri("http://athena/pages/crawlable");
+                var response = client.GetAsync(requestUri).Result;
+                response.EnsureSuccessStatusCode();
+                var content = response.Content.ReadAsStringAsync().Result;
+                var page = JsonConvert.DeserializeObject<CrawlablePage>(content);
+                return page;
             }
         }
 
         public void Save(IEnumerable<CrawlablePage> pages)
         {
-            foreach (var crawlablePage in pages)
+            using (var client = new HttpClient())
             {
-                Save(crawlablePage);
+                var requestUri = new Uri("http://athena/pages/crawlable");
+                var model = new CrawledPageCollectionModel()
+                {
+                    CrawlablePages = pages.Select(x => new CrawledPageModel()
+                    {
+                        Uri = x.Uri.ToString()
+                    })
+                };
+                var serializedModel = JsonConvert.SerializeObject(model);
+                var content = new StringContent(serializedModel, Encoding.UTF8, "application/json");
+                var res = client.PutAsync(requestUri, content).Result;
             }
         }
     }

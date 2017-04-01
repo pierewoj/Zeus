@@ -1,4 +1,5 @@
 ﻿using System;
+using Consul.SimpleDiscovery;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -17,8 +18,9 @@ namespace Zeus.Crawler
             services.AddSingleton<ICrawlablePagesRepository, CrawlablePagesRepository>();
             services.AddSingleton<ILinksExtractor, LinksExtractor>();
             services.AddSingleton<ICrawlablePageBuilder, CrawlablePageBuilder>();
-            services.AddSingleton<IShouldCrawlDecider, ShouldCrawlDecider>();
             services.AddSingleton<IQueryProcessor, QueryProcessor>();
+            services.AddDiscoveryRegistrer();
+            services.AddServiceResolver();
             var serviceProvider = services.BuildServiceProvider();
 
             //configuring serilog
@@ -30,11 +32,8 @@ namespace Zeus.Crawler
             loggerFactory.AddSerilog(log);
 
             var runner = serviceProvider.GetService<ICrawlRunner>();
-            var startPage = new CrawlablePage()
-            {
-                Uri = new Uri("http://kwestiasmaku.com")
-            };
-            runner.Run(startPage);
+            
+            runner.Run();
         }
     }
 }
