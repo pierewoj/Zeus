@@ -39,6 +39,8 @@ namespace Zeus.Crawler
                     var crawlablePages = links.Select(_crawlablePageBuilder.Build);
                     return new PageCrawlResult()
                     {
+                        Html = content,
+                        Url = page.Uri.ToString(),
                         CrawlablePages = crawlablePages
                     };
                 }, () => Option<PageCrawlResult>.None);

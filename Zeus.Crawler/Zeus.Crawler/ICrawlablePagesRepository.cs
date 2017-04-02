@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Security;
 using System.Text;
 using Consul.SimpleDiscovery;
 using LanguageExt;
@@ -15,6 +16,7 @@ namespace Zeus.Crawler
     {
         Option<CrawlablePage> GetPage();
         void Save(IEnumerable<CrawlablePage> pages);
+        void Delete(string uri);
     }
 
     class CrawlablePagesRepository : ICrawlablePagesRepository
@@ -32,7 +34,7 @@ namespace Zeus.Crawler
         {
             using(var client = new HttpClient())
             {
-                var requestUri = new Uri("http://athena/pages/crawlable");
+                var requestUri = new Uri("http://athena/pages/crawlable/random");
                 var response = client.GetAsync(requestUri).Result;
                 response.EnsureSuccessStatusCode();
                 var content = response.Content.ReadAsStringAsync().Result;
@@ -56,6 +58,28 @@ namespace Zeus.Crawler
                 var serializedModel = JsonConvert.SerializeObject(model);
                 var content = new StringContent(serializedModel, Encoding.UTF8, "application/json");
                 var res = client.PutAsync(requestUri, content).Result;
+            }
+        }
+
+        public void Delete(string uri)
+        {
+            using (var client = new HttpClient())
+            {
+                var requestUri = new Uri("http://athena/pages/crawlable");
+                var model = new CrawledPageModel()
+                {
+                    Uri = uri
+                };
+                var serializedModel = JsonConvert.SerializeObject(model);
+                var content = new StringContent(serializedModel, Encoding.UTF8, "application/json");
+                var request = new HttpRequestMessage()
+                {
+                    Content = content,
+                    Method = HttpMethod.Delete,
+                    RequestUri = requestUri
+                };
+                var res = client.SendAsync(request).Result;
+
             }
         }
     }

@@ -44,8 +44,8 @@ namespace Zeus.Crawler
             resOption.IfSome(res =>
             {
                 _crawlablePagesRepository.Save(res.CrawlablePages);
-                var savingResult = _pageCrawlResultSaver.SaveResult(res);
-                _resultSavedNotifier.Notify(savingResult);
+                _pageCrawlResultSaver.SaveResult(res);
+                _resultSavedNotifier.Notify(res);
             });
         }
     }

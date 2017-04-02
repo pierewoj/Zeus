@@ -1,14 +1,26 @@
-﻿namespace Zeus.Crawler
+﻿using Microsoft.Extensions.Logging;
+
+namespace Zeus.Crawler
 {
     interface IResultSavedNotifier
     {
-        void Notify(SavingResult savingResult);
+        void Notify(PageCrawlResult savingResult);
     }
 
     class ResultSavedNotifier : IResultSavedNotifier
     {
-        public void Notify(SavingResult savingResult)
+        private readonly ICrawlablePagesRepository _crawlablePagesRepository;
+        private readonly ILogger<ResultSavedNotifier> _logger;
+
+        public ResultSavedNotifier(ILogger<ResultSavedNotifier> logger, ICrawlablePagesRepository repository)
         {
+            _logger = logger;
+            _crawlablePagesRepository = repository;
+        }
+
+        public void Notify(PageCrawlResult savingResult)
+        {
+            _crawlablePagesRepository.Delete(savingResult.Url);
         }
     }
 }
