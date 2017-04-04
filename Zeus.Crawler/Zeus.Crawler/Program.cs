@@ -1,5 +1,4 @@
 ﻿using System;
-using Consul.SimpleDiscovery;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -13,14 +12,12 @@ namespace Zeus.Crawler
             var services = new ServiceCollection().AddLogging();
             services.AddSingleton<ICrawlRunner, CrawlRunner>();
             services.AddSingleton<ICrawler, Crawler>();
-            services.AddSingleton<IPageCrawlResultSaver, PageCrawlResultSaver>();
-            services.AddSingleton<IResultSavedNotifier, ResultSavedNotifier>();
+            services.AddSingleton<IPageCrawledNotifier, PageCrawledNotifier>();
+            services.AddSingleton<ICrawlResultSaver, CrawlResultSaver>();
             services.AddSingleton<ICrawlablePagesRepository, CrawlablePagesRepository>();
             services.AddSingleton<ILinksExtractor, LinksExtractor>();
-            services.AddSingleton<ICrawlablePageBuilder, CrawlablePageBuilder>();
             services.AddSingleton<IQueryProcessor, QueryProcessor>();
-            services.AddDiscoveryRegistrer();
-            services.AddServiceResolver();
+            services.AddSingleton<IRedisProvider, RedisProvider>();
             var serviceProvider = services.BuildServiceProvider();
 
             //configuring serilog

@@ -6,6 +6,6 @@ namespace Zeus.Crawler
 {
     static class Configuration
     {
-        public static string BaseUrl => "http://kwestiasmaku.com";
+        public static string RedisHost => "koper";
     }
 }

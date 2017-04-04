@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Security;
 using System.Text;
-using Consul.SimpleDiscovery;
 using LanguageExt;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -15,18 +14,15 @@ namespace Zeus.Crawler
     interface ICrawlablePagesRepository
     {
         Option<CrawlablePage> GetPage();
-        void Save(IEnumerable<CrawlablePage> pages);
         void Delete(string uri);
     }
 
     class CrawlablePagesRepository : ICrawlablePagesRepository
     {
         private readonly ILogger<CrawlablePagesRepository> _logger;
-        private readonly IServiceResolver _serviceResolver;
 
-        public CrawlablePagesRepository(ILogger<CrawlablePagesRepository> logger, IServiceResolver resolver)
+        public CrawlablePagesRepository(ILogger<CrawlablePagesRepository> logger)
         {
-            _serviceResolver = resolver;
             _logger = logger;
         }
 
@@ -40,24 +36,6 @@ namespace Zeus.Crawler
                 var content = response.Content.ReadAsStringAsync().Result;
                 var page = JsonConvert.DeserializeObject<CrawlablePage>(content);
                 return page;
-            }
-        }
-
-        public void Save(IEnumerable<CrawlablePage> pages)
-        {
-            using (var client = new HttpClient())
-            {
-                var requestUri = new Uri("http://athena/pages/crawlable");
-                var model = new CrawledPageCollectionModel()
-                {
-                    CrawlablePages = pages.Select(x => new CrawledPageModel()
-                    {
-                        Uri = x.Uri.ToString()
-                    })
-                };
-                var serializedModel = JsonConvert.SerializeObject(model);
-                var content = new StringContent(serializedModel, Encoding.UTF8, "application/json");
-                var res = client.PutAsync(requestUri, content).Result;
             }
         }
 

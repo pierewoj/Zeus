@@ -4,33 +4,34 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
+using Zeus.Crawler.Models;
 
 namespace Zeus.Crawler
 {
-    interface IPageCrawlResultSaver
+    interface IPageCrawledNotifier
     {
-        SavingResult SaveResult(PageCrawlResult result);
+        void Notify(PageCrawlResult result);
     }
 
-    class PageCrawlResultSaver : IPageCrawlResultSaver
+    class PageCrawledNotifier : IPageCrawledNotifier
     {
-        private readonly ILogger<PageCrawlResultSaver> _logger;
+        private readonly ILogger<PageCrawledNotifier> _logger;
 
-        public PageCrawlResultSaver(ILogger<PageCrawlResultSaver> logger)
+        public PageCrawledNotifier(ILogger<PageCrawledNotifier> logger)
         {
             _logger = logger;
         }
         
-        public SavingResult SaveResult(PageCrawlResult result)
+        public void Notify(PageCrawlResult result)
         {
             while (true)
             {
                 try
                 {
                     PushToRabbit(result);
-                    return new SavingResult();
+                    break;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     _logger.LogInformation("Failed to push to rabbit. Retrying.");
                     Thread.Sleep(1000);
@@ -49,7 +50,7 @@ namespace Zeus.Crawler
             {
                 channel.ExchangeDeclare(exchange: exchangeName, type: "fanout");
 
-                var message = new
+                var message = new PageCrawledNotification()
                 {
                     Html = result.Html,
                     Uri = result.Url
@@ -60,7 +61,7 @@ namespace Zeus.Crawler
                                      routingKey: "",
                                      basicProperties: null,
                                      body: body);
-                _logger.LogInformation($"Published page crawl result of uri [{result.Url}] to exchange [{exchangeName}] on host [{rabbitHost}]");
+                _logger.LogInformation($"Published notification of page crawl of uri [{result.Url}] to exchange [{exchangeName}] on host [{rabbitHost}]");
             }
 
         }

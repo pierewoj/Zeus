@@ -4,6 +4,6 @@ namespace Zeus.Crawler
 {
     public class CrawlablePage
     {
-        public Uri Uri { get; set; }
+        public string Uri { get; set; }
     }
 }

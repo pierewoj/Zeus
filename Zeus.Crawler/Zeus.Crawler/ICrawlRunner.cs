@@ -9,20 +9,20 @@ namespace Zeus.Crawler
 
     class CrawlRunner : ICrawlRunner
     {
-        private readonly IPageCrawlResultSaver _pageCrawlResultSaver;
-        private readonly IResultSavedNotifier _resultSavedNotifier;
+        private readonly IPageCrawledNotifier _pageCrawledNotifier;
+        private readonly ICrawlResultSaver _crawlResultSaver;
         private readonly ICrawler _crawler;
         private readonly ILogger _logger;
         private readonly ICrawlablePagesRepository _crawlablePagesRepository;
 
-        public CrawlRunner(IPageCrawlResultSaver saver, IResultSavedNotifier notifier, ICrawlablePagesRepository pagesRepository,
+        public CrawlRunner(IPageCrawledNotifier saver, ICrawlResultSaver notifier, ICrawlablePagesRepository pagesRepository,
             ICrawler crawler, ILogger<CrawlRunner> logger)
         {
             _crawlablePagesRepository = pagesRepository;
             _logger = logger;
             _crawler = crawler;
-            _resultSavedNotifier = notifier;
-            _pageCrawlResultSaver = saver;
+            _crawlResultSaver = notifier;
+            _pageCrawledNotifier = saver;
         }
 
         public void Run()
@@ -43,9 +43,9 @@ namespace Zeus.Crawler
             var resOption = _crawler.Crawl(page);
             resOption.IfSome(res =>
             {
-                _crawlablePagesRepository.Save(res.CrawlablePages);
-                _pageCrawlResultSaver.SaveResult(res);
-                _resultSavedNotifier.Notify(res);
+                _pageCrawledNotifier.Notify(res);
+                _crawlResultSaver.Save(res);
+                _crawlablePagesRepository.Delete(res.Url);
             });
         }
     }
