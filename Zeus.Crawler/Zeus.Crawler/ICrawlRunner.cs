@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Zeus.Crawler
 {
@@ -31,11 +32,14 @@ namespace Zeus.Crawler
             var pageOption = _crawlablePagesRepository.GetPage();
             do
             {
-                pageOption.IfSome(x => Crawl(x));
+                pageOption.Match(Crawl, () =>
+                {
+                    _logger.LogInformation($"No pages to crawl found. Sleeping for a while. Hungry!");
+                    Thread.Sleep(5000);
+                });
                 pageOption = _crawlablePagesRepository.GetPage();
-            } while (pageOption.IsSome);
-            
-            _logger.LogInformation("No more pages to crawl. Exiting crawl run.");
+                
+            } while (true);
         }
 
         private void Crawl(CrawlablePage page)

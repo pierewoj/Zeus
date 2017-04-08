@@ -41,7 +41,7 @@ namespace Zeus.Crawler
 
         private void PushToRabbit(PageCrawlResult result)
         {
-            var exchangeName = "kwestiasmaku_crawled";
+            var exchangeName = "crawled_notifications";
             var rabbitHost = "rabbit";
 
             var factory = new ConnectionFactory() { HostName = rabbitHost };

@@ -24,6 +24,7 @@ namespace Zeus.Crawler
         {
             try
             {
+                _logger.LogInformation($"Making GET on [{uri}]");
                 var response = _client.GetAsync(uri).Result;
                 response.EnsureSuccessStatusCode();
                 return response.Content.ReadAsStringAsync().Result;
